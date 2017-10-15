@@ -1,11 +1,11 @@
 [submodule "drivers/userspace/lib/cJSON"]
 	path = drivers/userspace/lib/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
-[submodule "yocto/meta-xilinx"]
-	path = yocto/meta-xilinx
-	url = git://github.com/Xilinx/meta-xilinx
-	branch = pyro
 [submodule "yocto/poky"]
 	path = yocto/poky
 	url = git://git.yoctoproject.org/poky.git
+	branch = pyro
+[submodule "yocto/meta-xilinx"]
+	path = yocto/meta-xilinx
+	url = git://github.com/Xilinx/meta-xilinx
 	branch = pyro
