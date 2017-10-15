@@ -1,0 +1,32 @@
+# Only one PE.
+<pe_0>
+
+    # Register initialization.
+    init %r1, $1;
+    init %r2, $1;
+    init %r3, $12;
+
+    # Check that the operand is less than or equal to 12. (We are computing 12! since that is the
+    # largest factorial under 2 ^ 32.
+    when %p == 00000000:
+        ule %p7, %r2, %r3; set %p = X0000001;
+
+    # If we have exceeded the bound, start saving our result.
+    when %p == 00000001:
+        mov %o2.0, $1; set %p = 00000010;
+
+    # Save the result.
+    when %p == 00000010:
+        mov %o3.0, %r1; set %p = 00000011;
+
+    # Halt.
+    when %p == 00000011:
+        halt;
+
+    # If we have not exceeded the bound, perform the multiplication.
+    when %p == 10000001:
+        lmul %r1, %r1, %r2; set %p = 00000100;
+
+    # Iterate the operand and keep going.
+    when %p == 00000100:
+        add %r2, %r2, $1; set %p = 00000000;

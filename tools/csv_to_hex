@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+
+import sys
+
+import numpy as np
+
+
+def main(argv):
+    """
+    Entry point.
+    """
+
+    # Check usage and parse the arguments.
+    if len(argv) != 5:
+        print("Usage: csv_to_hex WORD_WIDTH NUM_WORDS CSV_INPUT_FILE HEX_OUTPUT_FILE.", file=sys.stderr)
+        return 1
+
+    # Parse the arguments.
+    try:
+        word_width = int(argv[1])
+    except ValueError:
+        print("The word width must be a strictly positive integer.", file=sys.stderr)
+        return 1
+    if word_width <= 0:
+        print("The word width must be a strictly positive integer.", file=sys.stderr)
+        return 1
+    try:
+        num_words = int(argv[2])
+    except ValueError:
+        print("The number of words must be a strictly postive integer.", file=sys.stderr)
+        return 1
+    if num_words <= 0:
+        print("The number of words must be a strictly postive integer.", file=sys.stderr)
+        return 1
+    csv_input_file_location = argv[3]
+    hex_output_file_location = argv[4]
+
+    # Read the input file.
+    input_data = np.genfromtxt(csv_input_file_location, delimiter=',', comments='#', dtype=np.int64)
+    if not input_data.shape:
+        input_data = [input_data]
+        input_data_length = 1
+    else:
+        input_data_length = input_data.shape[0]
+
+    # Open the hex output file and...
+    with open(hex_output_file_location, "w") as hex_output_file:
+        # Prepend zeros to fill out the memory.
+        for _ in range(num_words - input_data_length):
+            hex_string = "{0:#0{1}x}".format(0, int(word_width / 4) + 2)
+            print(hex_string[2::], file=hex_output_file)
+
+        # Write out the contents.
+        for word in reversed(input_data):  # Hex format addresses are reversed for unpacked types.
+            word = np.uint32(word)
+            hex_string = "{0:#0{1}x}".format(word, int(word_width / 4) + 2)
+            print(hex_string[2::], file=hex_output_file)
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

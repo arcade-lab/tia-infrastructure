@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+
+from constants.direction import *
+from parameters.utility import *
+from routing.algorithm import *
+from routing.channel import *
+from routing.destination import *
+from routing.exception import *
+from routing.machine_code import *
+from routing.peripheral_element import *
+from routing.routing_element import *
+from routing.routing_element import *
+from routing.instances import *
+
+
+# Sanity check, not exhaustive.
+with open("../hardware/platform.json") as platforms_json_file:
+    platforms_json_string = platforms_json_file.read()
+cp, ip, sp = build_parameters_from_json(platforms_json_string)
+routing_matrix = build_bts_routing_matrix(ip)
+source_element = routing_matrix.lookup("read_port_0")
+destination_element = routing_matrix.lookup("processing_element_15")
+channel = route(source_element, 0, destination_element, 0, ip.num_physical_planes)
+print(channel.route)
+print("\nFrom read_port_0:\n")
+for plane, table in enumerate(destination_element.source_routing_tables):
+    for entry in table:
+        print(plane, entry, table[entry])
+source_element = routing_matrix.lookup("read_port_1")
+channel = route(source_element, 0, destination_element, 1, ip.num_physical_planes)
+print(channel.route)
+print("\nFrom read_port_1:\n")
+for plane, table in enumerate(destination_element.source_routing_tables):
+    for entry in table:
+        print(plane, entry, table[entry])
+source_element = routing_matrix.lookup("read_port_2")
+channel = route(source_element, 0, destination_element, 2, ip.num_physical_planes)
+print(channel.route)
+print("\nFrom read_port_2:\n")
+for plane, table in enumerate(destination_element.source_routing_tables):
+    for entry in table:
+        print(plane, entry, table[entry])
+source_element = routing_matrix.lookup("read_port_3")
+channel = route(source_element, 0, destination_element, 3, ip.num_physical_planes)
+print(channel.route)
+print("\nFrom read_port_3:\n")
+for plane, table in enumerate(destination_element.source_routing_tables):
+    for entry in table:
+        print(plane, entry, table[entry])

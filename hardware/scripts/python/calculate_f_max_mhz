@@ -1,0 +1,92 @@
+#!/usr/bin/env python2
+
+"""
+A utility for calculating the multiple for a VCD rebasing on the VLSI lab servers (hence why it is written in Python 2).
+"""
+
+import sys
+
+
+def closed_successfully(design_compiler_report_string):
+    """
+    Whether the design closed.
+
+    :param design_compiler_report_string: string of the Design Compiler output report
+    :return: the Boolean result
+    """
+
+    # String search.
+    negative_slack = "slack (VIOLATED)" in design_compiler_report_string
+    return not negative_slack
+
+
+def get_negative_slack_ns(design_compiler_report_string):
+    """
+    Determine the negative slack in nanoseconds.
+
+    :param design_compiler_report_string: string of the Design Compiler output report
+    :return: the Boolean result
+    """
+
+    # Search line by line.
+    for line in design_compiler_report_string.split('\n'):
+        if "slack (VIOLATED)" in line:
+            fields = line.split()
+            negative_slack_ns = abs(float(fields[2]))
+            break
+    else:
+        negative_slack_ns = 0.0
+
+    # Return the negative slack.
+    return negative_slack_ns
+
+
+def main(argv):
+    """
+    Entry point.
+
+    :param argv: sys.argv arguments
+    :return: exit code
+    """
+
+    # Check usage.
+    if len(argv) != 3:
+        print "Usage: ./calculate_f_max_mhz TARGET_FREQUENCY_MHZ DESIGN_COMPILER_REPORT_PATH"
+        return 1
+
+    # Parse the arguments.
+    try:
+        target_frequency_mhz = int(argv[1])
+    except ValueError:
+        print "The target frequency must be an integer."
+        return 1
+    if target_frequency_mhz <= 0:
+        print "The target frequency must be strictly positive."
+        return 1
+    try:
+        design_compiler_report_file = open(argv[2])
+    except:
+        e = sys.exc_info()[0]
+        print "Unable to open the report file file %s for reading: %s" % (argv[2], str(e))
+        return 1
+
+    # Main application logic.
+    design_compiler_report_string = design_compiler_report_file.read()
+    design_compiler_report_file.close()
+    target_period_s = 1.0 / (target_frequency_mhz * 1000000.0)
+    target_period_ns = target_period_s * 1000000000.0
+    if closed_successfully(design_compiler_report_string):
+        print target_frequency_mhz
+    else:
+        negative_slack_ns = get_negative_slack_ns(design_compiler_report_string)
+        new_period_ns = target_period_ns + negative_slack_ns
+        new_frequency_ghz = 1 / new_period_ns
+        new_frequency_mhz = int(new_frequency_ghz * 1000.0)
+        print new_frequency_mhz
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,97 @@
+# Unused.
+<processing_element_0>
+
+    # Off.
+    when %p == XXXXXXXX:
+        halt;
+
+# Unused.
+<processing_element_1>
+
+    # Off.
+    when %p == XXXXXXXX:
+        halt;
+
+# Write address stream generator.
+<processing_element_2>
+
+    # Base address = 1, bound address = 32761.
+    init %r0, $1;
+    init %r1, $32761;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o2.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o2.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o2.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o2.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o2.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o2.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o2.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o2.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Halt.
+    when %p == 10000001:
+        halt;
+
+# Write data stream generator.
+<processing_element_3>
+
+    # Base value = 1, bound value = 32761.
+    init %r0, $1;
+    init %r1, $32761;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o2.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o2.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o2.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o2.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o2.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o2.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o2.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o2.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Halt.
+    when %p == 10000001:
+        halt;

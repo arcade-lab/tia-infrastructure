@@ -1,0 +1,3 @@
+"""
+Basic constants and definitions.
+"""

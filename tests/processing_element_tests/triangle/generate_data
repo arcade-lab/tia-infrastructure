@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+
+import sys
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Input data.
+    input_data_strings = [str(n) for n in range(16383)]
+    with open("input_data.csv", "w") as input_data_file:
+        print(", ".join(input_data_strings), file=input_data_file)
+
+    # Output data.
+    with open("expected_output_data.csv", "w") as expected_output_data_file:
+        print(sum(range(16383)), file=expected_output_data_file)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,9 @@
+[
+    "arg_max",
+    "dot_product",
+    "filter",
+    "merge",
+    "stream",
+    "string_search",
+    "udiv"
+]

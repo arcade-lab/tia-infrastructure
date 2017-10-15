@@ -1,0 +1,4 @@
+*.bin
+.*.swp
+*~
+triggered.csv

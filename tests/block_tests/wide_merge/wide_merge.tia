@@ -1,0 +1,382 @@
+# List loader PE.
+<processing_element_0>
+
+    # Base address = 0, bound address = 4096.
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # Base of loop.
+    when %p == 00000000:
+        mov %r0, $0; set %p = 00000001;
+
+    # 8x unroll for speed.
+    when %p == 00000001:
+        uge %p7, %r0, $4096; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $0; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $1; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $2; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $3; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $4; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $5; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $6; set %p = 00001001;
+
+        when %p == 00001001:
+            add %o0.0, %r0, $7; set %p = 00001010;
+
+        when %p == 00001010:
+            add %r0, %r0, $8; set %p = 00000001;
+
+    # Emit halt canary.
+    when %p == 10000010:
+        mov %o0.1, $0; set %p = 10000011;
+
+    # Halt.
+    when %p == 10000011 with %i0.1:
+        halt %o2.1; deq %i0;
+
+# List loader PE.
+<processing_element_1>
+
+    # Base address = 4096, bound address = 8192.
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # Base of loop.
+    when %p == 00000000:
+        mov %r0, $4096; set %p = 00000001;
+
+    # 8x unroll for speed.
+    when %p == 00000001:
+        uge %p7, %r0, $8192; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $0; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $1; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $2; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $3; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $4; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $5; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $6; set %p = 00001001;
+
+        when %p == 00001001:
+            add %o0.0, %r0, $7; set %p = 00001010;
+
+        when %p == 00001010:
+            add %r0, %r0, $8; set %p = 00000001;
+
+    # Emit halt canary.
+    when %p == 10000010:
+        mov %o0.1, $0; set %p = 10000011;
+
+    # Halt.
+    when %p == 10000011 with %i0.1:
+        halt %o2.1; deq %i0;
+
+
+# List loader PE.
+<processing_element_2>
+
+    # Base address = 8192, bound address = 12288.
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # Base of loop.
+    when %p == 00000000:
+        mov %r0, $8192; set %p = 00000001;
+
+    # 8x unroll for speed.
+    when %p == 00000001:
+        uge %p7, %r0, $12288; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $0; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $1; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $2; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $3; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $4; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $5; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $6; set %p = 00001001;
+
+        when %p == 00001001:
+            add %o0.0, %r0, $7; set %p = 00001010;
+
+        when %p == 00001010:
+            add %r0, %r0, $8; set %p = 00000001;
+
+    # Emit halt canary.
+    when %p == 10000010:
+        mov %o0.1, $0; set %p = 10000011;
+
+    # Halt.
+    when %p == 10000011 with %i0.1:
+        halt %o2.1; deq %i0;
+
+# List loader PE.
+<processing_element_3>
+
+    # Base address = 12288, bound address = 16384.
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # Base of loop.
+    when %p == 00000000:
+        mov %r0, $12288; set %p = 00000001;
+
+    # 8x unroll for speed.
+    when %p == 00000001:
+        uge %p7, %r0, $16384; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $0; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $1; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $2; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $3; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $4; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $5; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $6; set %p = 00001001;
+
+        when %p == 00001001:
+            add %o0.0, %r0, $7; set %p = 00001010;
+
+        when %p == 00001010:
+            add %r0, %r0, $8; set %p = 00000001;
+
+    # Emit halt canary.
+    when %p == 10000010:
+        mov %o0.1, $0; set %p = 10000011;
+
+    # Halt.
+    when %p == 10000011 with %i0.1:
+        halt %o2.1; deq %i0;
+
+# Routing PE.
+<processing_element_4>
+    when %p == XXXXXXXX with %i0.0:
+        mov %o1.0, %i0; deq %i0;
+    when %p == XXXXXXXX with %i0.1:
+        halt %o1.1; deq %i0;
+
+
+# Merge worker PE.
+<processing_element_5>
+
+    # Comparison.
+    when %p == 00000000 with %i0.0, %i3.0:
+        ult %p7, %i3, %i0; set %p = Z0000001;
+
+    # Send left.
+    when %p == 10000001 with %i0.0, %i3.0:
+        mov %o2.0, %i3; deq %i3; set %p = 00000000;
+
+    # Send right.
+    when %p == 00000001 with %i0.0, %i3.0:
+        mov %o2.0, %i0; deq %i0; set %p = 00000000;
+
+    # Drain left.
+    when %p == XXXXXXXX with %i0.1, %i3.0:
+        mov %o2.0, %i3; deq %i3;
+
+    # Drain right.
+    when %p == XXXXXXXX with %i0.0, %i3.1:
+        mov %o2.0, %i0; deq %i0;
+
+    # Halt.
+    when %p == XXXXXXXX with %i0.1, %i3.1:
+        halt %o2.1; deq %i0, %i3;
+
+# Merge worker PE.
+<processing_element_6>
+
+    # Comparison.
+    when %p == 00000000 with %i0.0, %i1.0:
+        ult %p7, %i0, %i1; set %p = Z0000001;
+
+    # Send left.
+    when %p == 10000001 with %i0.0, %i1.0:
+        mov %o2.0, %i0; deq %i0; set %p = 00000000;
+
+    # Send right.
+    when %p == 00000001 with %i0.0, %i1.0:
+        mov %o2.0, %i1; deq %i1; set %p = 00000000;
+
+    # Drain right.
+    when %p == XXXXXXXX with %i0.1, %i1.0:
+        mov %o2.0, %i1; deq %i1;
+
+    # Drain left.
+    when %p == XXXXXXXX with %i0.0, %i1.1:
+        mov %o2.0, %i0; deq %i0;
+
+    # Halt.
+    when %p == XXXXXXXX with %i0.1, %i1.1:
+        halt %o2.1; deq %i0, %i1;
+
+# Routing PE.
+<processing_element_7>
+    when %p == XXXXXXXX with %i0.0:
+        mov %o3.0, %i0; deq %i0;
+    when %p == XXXXXXXX with %i0.1:
+        halt %o3.1; deq %i0;
+
+# Unused.
+<processing_element_8>
+    when %p == XXXXXXXX:
+        halt;
+
+# Merge worker PE.
+<processing_element_9>
+
+    # Comparison.
+    when %p == 00000000 with %i0.0, %i1.0:
+        ult %p7, %i0, %i1; set %p = Z0000001;
+
+    # Send left.
+    when %p == 10000001 with %i0.0, %i1.0:
+        mov %o2.0, %i0; deq %i0; set %p = 00000000;
+
+    # Send right.
+    when %p == 00000001 with %i0.0, %i1.0:
+        mov %o2.0, %i1; deq %i1; set %p = 00000000;
+
+    # Drain right.
+    when %p == XXXXXXXX with %i0.1, %i1.0:
+        mov %o2.0, %i1; deq %i1;
+
+    # Drain left.
+    when %p == XXXXXXXX with %i0.0, %i1.1:
+        mov %o2.0, %i0; deq %i0;
+
+    # Halt.
+    when %p == XXXXXXXX with %i0.1, %i1.1:
+        halt %o2.1; deq %i0, %i1;
+
+# Routing PE.
+<processing_element_10>
+    when %p == XXXXXXXX with %i0.0:
+        mov %o3.0, %i0; deq %i0;
+    when %p == XXXXXXXX with %i0.1:
+        halt %o3.1; deq %i0;
+
+# Unused.
+<processing_element_11>
+    when %p == XXXXXXXX:
+        halt;
+
+# Write address generating PE.
+<processing_element_12>
+
+    # Base address = 16384, bound address = 32768.
+
+    # Base of loop.
+    when %p == 00000000:
+        mov %r0, $16384; set %p = 00000001;
+
+    # 8x unroll for speed.
+    when %p == X0000001:
+        uge %p7, %r0, $32768; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o2.0, %r0, $0; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o2.0, %r0, $1; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o2.0, %r0, $2; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o2.0, %r0, $3; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o2.0, %r0, $4; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o2.0, %r0, $5; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o2.0, %r0, $6; set %p = 00001001;
+
+        when %p == 00001001:
+            add %o2.0, %r0, $7; set %p = 00001010;
+
+        when %p == 00001010:
+            add %r0, %r0, $8; set %p = 00000001;
+
+    # Upon exiting the loop, our last job is to stay alive as a router til halt.
+    when %p == 10000010:
+        halt;
+
+# Routing PE.
+<processing_element_13>
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+    when %p == XXXXXXXX with %i0.1:
+        halt; deq %i0;
+
+# Unused.
+<processing_element_14>
+    when %p == XXXXXXXX:
+        halt;
+
+# Unused.
+<processing_element_15>
+    when %p == XXXXXXXX:
+        halt;

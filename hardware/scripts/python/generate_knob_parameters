@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+
+"""
+Usage: generate_knob_parameters [-h] PARAMETERS_JSON_FILE KNOB_PARAMETERS_SVH_TEMPLATE_FILE KNOB_PARAMETERS_SVH_PATH
+
+Something cool...
+
+Arguments:
+    PARAMETERS_JSON_FILE                    JSON parameters file
+    KNOB_PARAMETERS_SVH_TEMPLATE_FILE       template file for the output
+    KNOB_PARAMETERS_SVH_PATH                path to the target knob_parameters.svh location
+
+Options:
+    -h --help                               this description
+"""
+
+import json
+from string import Template
+import sys
+
+from docopt import docopt
+
+
+def convert_core_parameters_to_template_parameters(core_parameters):
+    """
+    Rebuilds the PE parameter dictionary in terms of the knob_parameters.svh formatter.
+
+    :param core_parameters: "core" subsection of the parameters dictionary coming from the generic JSON parameters file
+    :return: a dictionary with keys in terms of the template file
+    """
+
+    # Instantiate the template dictionary key-by-key.
+    template_parameters = {
+        "tia_core_architecture":
+            "TIA_{}_CORE".format(core_parameters["architecture"].upper()),
+        "tia_device_word_width":
+            core_parameters["device_word_width"],
+        "tia_immediate_width":
+            core_parameters["immediate_width"],
+        "tia_mm_instruction_width":
+            core_parameters["mm_instruction_width"],
+        "tia_num_instructions":
+            core_parameters["num_instructions"],
+        "tia_num_predicates":
+            core_parameters["num_predicates"],
+        "tia_num_registers":
+            core_parameters["num_registers"],
+        "tia_does_not_have_multiplier":
+            "" if core_parameters["has_multiplier"] else "// ",
+        "tia_does_not_have_two_word_product_multiplier":
+            "" if core_parameters["has_two_word_product_multiplier"] else "// ",
+        "tia_does_not_have_scratchpad":
+            "" if core_parameters["has_scratchpad"] else "// ",
+        "tia_num_scratchpad_words":
+            core_parameters["num_scratchpad_words"],
+        "tia_no_latch_based_instruction_memory":
+            "" if core_parameters["latch_based_instruction_memory"] else "// ",
+        "tia_no_ram_based_immediate_storage":
+            "" if core_parameters["ram_based_immediate_storage"] else "// ",
+        "tia_num_input_channels":
+            core_parameters["num_input_channels"],
+        "tia_num_output_channels":
+            core_parameters["num_output_channels"],
+        "tia_channel_buffer_depth":
+            core_parameters["channel_buffer_depth"],
+        "tia_max_num_input_channels_to_check":
+            core_parameters["max_num_input_channels_to_check"],
+        "tia_num_tags":
+            core_parameters["num_tags"],
+        "tia_does_not_have_speculative_predicate_unit":
+            "" if core_parameters["has_speculative_predicate_unit"] else "// ",
+        "tia_does_not_have_effective_queue_status":
+            "" if core_parameters["has_effective_queue_status"] else "// ",
+        "tia_does_not_have_processing_element_debug_monitor":
+            "" if core_parameters["has_debug_monitor"] else "// ",
+        "tia_does_not_have_processing_element_performance_counters":
+            "" if core_parameters["has_performance_counters"] else "// "
+    }
+
+    # Return the new template dictionary.
+    return template_parameters
+
+
+def convert_interconnect_parameters_to_template_parameters(interconnect_parameters):
+    """
+    Rebuilds the inteconnect parameter dictionary as template parameters.
+
+    :param interconnect_parameters: interconnect parameter dictionary from the JSON file
+    :return: a dictionary of template parameter strings
+    """
+
+    # Instantiate the template dictionary key-by-key.
+    template_parameters = {
+        "tia_router_type":
+            "TIA_{}_ROUTER".format(interconnect_parameters["router_type"].upper()),
+        "tia_num_router_sources":
+            interconnect_parameters["num_router_sources"],
+        "tia_num_router_destinations":
+            interconnect_parameters["num_router_destinations"],
+        "tia_num_input_channels":
+            interconnect_parameters["num_input_channels"],
+        "tia_num_output_channels":
+            interconnect_parameters["num_output_channels"],
+        "tia_router_buffer_depth":
+            interconnect_parameters["router_buffer_depth"],
+        "tia_num_physical_planes":
+            interconnect_parameters["num_physical_planes"]
+    }
+
+    # Return the new template dictionary.
+    return template_parameters
+
+
+def convert_system_parameters_to_template_parameters(system_parameters):
+    """
+    Rebuilds the system parameter dictionary as template parameters.
+
+    :param system_parameters: system parameter dictionary from the JSON file
+    :return: a dictionary of template parameter strings
+    """
+
+    # Instantiate the template dictionary key-by-key.
+    template_parameters = {
+        "tia_host_word_width":
+            system_parameters["host_word_width"],
+        "tia_num_test_data_memory_words":
+            system_parameters["num_test_data_memory_words"],
+        "tia_test_data_memory_buffer_depth":
+            system_parameters["test_data_memory_buffer_depth"]
+    }
+
+    # Return the new template dictionary.
+    return template_parameters
+
+
+def main(arguments):
+    """
+    Entry point.
+
+    :param arguments: arguments parsed by docopt
+    :return: exit code
+    """
+
+    # --- Argument Parsing ---
+
+    # Check usage, and parse the arguments.
+    try:
+        with open(arguments["PARAMETERS_JSON_FILE"]) as parameters_json_file:
+            parameters_json_string = parameters_json_file.read()
+    except:
+        e = sys.exc_info()[0]
+        print("Unable to open the parameters JSON file {}: {}".format(arguments["PARAMETERS_JSON_FILE"], str(e)))
+        return 1
+    try:
+        with open(arguments["KNOB_PARAMETERS_SVH_TEMPLATE_FILE"]) as knob_parameters_svh_template_file:
+            knob_parameters_svh_template_string = knob_parameters_svh_template_file.read()
+    except:
+        e = sys.exc_info()[0]
+        print("Unable to open the template file {}: {}".format(arguments["KNOB_PARAMETERS_SVH_TEMPLATE_FILE"], str(e)))
+        return 1
+    try:
+        knob_parameters_svh_file = open(arguments["KNOB_PARAMETERS_SVH_PATH"], "w")
+    except:
+        e = sys.exc_info()[0]
+        print("Unable to open the output file {} for writing: {}".format(arguments["KNOB_PARAMETERS_SVH_PATH"], str(e)))
+        return 1
+
+    # --- Generic Parameters to Template Transformation ---
+
+    # Load the parameters JSON.
+    parameters_dictionary = json.loads(parameters_json_string)
+
+    # Translate the generic parameters into the template parameters.
+    template_parameters = convert_core_parameters_to_template_parameters(parameters_dictionary["core"])
+    template_parameters.update(convert_interconnect_parameters_to_template_parameters(parameters_dictionary["interconnect"]))
+    template_parameters.update(convert_system_parameters_to_template_parameters(parameters_dictionary["system"]))
+
+    # Construct a template for the new file.
+    template = Template(knob_parameters_svh_template_string)
+    svh_string = template.substitute(**template_parameters)
+
+    # Write out the SystemVerilog header.
+    print(svh_string, file=knob_parameters_svh_file)
+    knob_parameters_svh_file.close()
+
+    # Exit succesfully.
+    return 0
+
+
+if __name__ == "__main__":
+    parsed_arguments = docopt(__doc__)
+    sys.exit(main(parsed_arguments))

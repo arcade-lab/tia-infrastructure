@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+
+"""
+Usage: btfs [-ipmbh] [--macros=MACROS_FILE] [--scratchpad=SCRATCHPAD_FILE] [--execution_trace=EXECUTION_TRACE_FILE]
+            PLATFORM_FILE TIA_ASM_FILE CHANNELS_FILE INPUT_FILE EXPECTED_OUTPUT_FILE
+
+A functional simulator for the hardware block test system.
+
+Channel buffer indices when using software routing have the following arrangement:
+
+              N (0)
+
+                |
+              ______
+             |      |
+    W (3) -- |  PE  | -- E (1)
+             |______|
+
+                |
+
+              S (2)
+
+The overall architecture is:
+
+     [RP 0]       [RP 1]       [RP 2]       [RP 3]
+
+       ∧ |          ∧ |          ∧ |          ∧ |
+       | ∨          | ∨          | ∨          | ∨
+      _____        _____        _____        _____
+     |     | ---> |     | ---> |     | ---> |     |
+     |PE 0 |      |PE 1 |      |PE 2 |      |PE 3 |
+     |_____| <--- |_____| <--- |_____| <--- |_____|
+
+       ∧ |          ∧ |          ∧ |          ∧ |
+       | ∨          | ∨          | ∨          | ∨
+      _____        _____        _____        _____
+     |     | ---> |     | ---> |     | ---> |     |
+     |PE 4 |      |PE 5 |      |PE 6 |      |PE 7 |
+     |_____| <--- |_____| <--- |_____| <--- |_____|
+
+       ∧ |          ∧ |          ∧ |          ∧ |
+       | ∨          | ∨          | ∨          | ∨
+      _____        _____        _____        _____
+     |     | ---> |     | ---> |     | ---> |     |
+     |PE 8 |      |PE 9 |      |PE 10|      |PE 11|
+     |_____| <--- |_____| <--- |_____| <--- |_____|
+
+       ∧ |          ∧ |          ∧ |          ∧ |
+       | ∨          | ∨          | ∨          | ∨
+      _____        _____        _____        _____
+     |     | ---> |     | ---> |     | ---> |     |
+     |PE 12|      |PE 13|      |PE 10|      |PE 11|
+     |_____| <--- |_____| <--- |_____| <--- |_____|
+
+        |            |
+        ∨            ∨
+
+    [WP Addr]   [WP Data]
+
+Arguments:
+    PLATFORM_FILE                               JSON file containing physical parameters
+    TIA_ASM_FILE                                TIA assembly file name
+    CHANNELS_FILE                               JSON channel definition file, literally "null" if not used
+    INPUT_FILE                                  input data in word granularity in a CSV
+    EXPECTED_OUTPUT_FILE                        expected output data in word granularity in a CSV
+
+Options:
+    -h --help                                   this description
+    -i                                          interactive mode
+    -p                                          show processing element state at each iteration
+    -m                                          show memory state at each iteration
+    -b                                          show buffer state at each iteration
+    --macros=MACROS_FILE                        load a macros file (flat YAML dictionary format)
+    --scratchpad=SCRATCHPAD_FILE                scratchpad initialization data in word granularity in a CSV
+    --execution_trace=EXECUTION_TRACE_FILE      output trace CSV file
+"""
+
+
+import sys
+
+from docopt import docopt
+import numpy as np
+import yaml
+
+from assembly.exception import AssemblyException
+from assembly.program import apply_macros, ProcessingElementProgram, split_program_by_processing_element_label
+from parameters.utility import build_parameters_from_json
+from simulator.instances import build_bts_system
+
+
+def assemble(program_string, cp, macro_dictionary=None):
+    """
+    Assemble a formatted TIA assembly program into a list of Instruction instances.
+
+    :param cp: a CoreParameters instance
+    :param program_string: TIA assembly string
+    :param macro_dictionary: any simple substitution macros to be performed
+    :return: the instantiated list of Instructions
+    """
+
+    # Apply any macros, if necessary.
+    if macro_dictionary is not None:
+        program_string = apply_macros(macro_dictionary, program_string)
+
+    # Assemble the program.
+    labels_and_program_strings = split_program_by_processing_element_label(program_string)
+    if len(labels_and_program_strings) > 16:
+        raise RuntimeError("btfs does not accept programs meant for more than 16 PEs.")
+    programs = []
+    for i, label_and_program_string in enumerate(labels_and_program_strings):
+        label, program_string = label_and_program_string
+        try:
+            programs.append(ProcessingElementProgram.from_label_and_string(cp, label, program_string))
+        except AssemblyException as e:
+            exception_string = f"Error encountered while assembling the program for PE {i}: {str(e)}"
+            raise RuntimeError(exception_string)
+    return programs
+
+
+def main(arguments):
+    """
+    Entry point.
+
+    :param arguments: arguments parsed by docopt
+    :return: exit code
+    """
+
+    # --- Argument Parsing ---
+
+    # Parse any flags.
+    interactive = arguments["-i"]
+    show_processing_elements = arguments["-p"]
+    show_memories = arguments["-m"]
+    show_buffers = arguments["-b"]
+    keep_execution_trace = arguments["--execution_trace"]
+
+    # Parse any assembly macros.
+    has_macros = False
+    if arguments["--macros"]:
+        macro_yaml_file_path = arguments["--macros"]
+        has_macros = True
+        try:
+            with open(macro_yaml_file_path) as macro_yaml_file:
+                macro_yaml_string = macro_yaml_file.read()
+        except:
+            e = sys.exc_info()[1]
+            error_string = f"Unable to open the macro file {macro_yaml_file_path}: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+        macro_dictionary = yaml.load(macro_yaml_string)
+    else:
+        macro_dictionary = None
+
+    # Read any scratchpad data.
+    has_scratchpad_data = False
+    if arguments["--scratchpad"]:
+        scratchpad_file_path = arguments["--scratchpad"]
+        has_scratchpad_data = True
+        try:
+            scratchpad_data = np.genfromtxt(scratchpad_file_path, delimiter=',', comments='#', dtype=np.uint32)
+        except:
+            e = sys.exc_info()[1]
+            error_string = f"Unable to open the scratchpad data file {scratchpad_file_path}: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    else:
+        scratchpad_data = None
+
+    # Parse the platform file.
+    platform_json_file_path = arguments["PLATFORM_FILE"]
+    try:
+        with open(platform_json_file_path) as platform_json_file:
+            platform_json_string = platform_json_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the platform file {platform_json_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    cp, ip, sp = build_parameters_from_json(platform_json_string)
+
+    # Read the channels file if not null (software routing).
+    if ip.router_type == "software" and arguments["CHANNELS_FILE"] != "null":
+        print("When software routing is being used, please set the CHANNELS_FILE argument to \"null\".", file=sys.stderr)
+        return 1
+    elif ip.router_type != "software":
+        print("Only software routing supported in this release.", file=sys.stderr)
+        return 1
+
+    # Assemble the given assembly file.
+    assembly_file_path = arguments["TIA_ASM_FILE"]
+    try:
+        with open(assembly_file_path) as assembly_file:
+            assembly_string = assembly_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the assembly file {assembly_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    if has_macros:
+        programs = assemble(assembly_string, cp, macro_dictionary=macro_dictionary)
+    else:
+        programs = assemble(assembly_string, cp)
+
+    # Get the input data and expected output data.
+    input_file_path = arguments["INPUT_FILE"]
+    input_data = np.genfromtxt(input_file_path, delimiter=',', comments='#', dtype=np.uint32)
+    if input_data.shape:
+        input_data_length = input_data.shape[0]
+    else:
+        input_data_length = 1
+    expected_output_file_path = arguments["EXPECTED_OUTPUT_FILE"]
+    expected_output_data = np.genfromtxt(expected_output_file_path, delimiter=',', comments='#', dtype=np.uint32)
+    if expected_output_data.shape:
+        expected_output_data_length = expected_output_data.shape[0]
+    else:
+        expected_output_data_length = 1
+
+    # Do a sanity check on the data sizes.
+    if input_data_length > sp.num_test_data_memory_words:
+        error_string = f"Error: the input data with {input_data_length} words is too big."
+        print(error_string, file=sys.stderr)
+        return 1
+    elif expected_output_data_length > sp.num_test_data_memory_words:
+        error_string = f"Error: the expected output data with {expected_output_data_length} words is too big."
+        print(error_string, file=sys.stderr)
+        return 1
+    elif input_data_length + expected_output_data_length > sp.num_test_data_memory_words:
+        requested_length = input_data_length + expected_output_data_length
+        error_string = f"Error: the combined input and expected output data size of {requested_length} is too big."
+        print(error_string, file=sys.stderr)
+        return 1
+
+    # --- System Construction and Execution ---
+
+    # Build the system, store the input data, and program the PEs.
+    system = build_bts_system(cp=cp, ip=ip, sp=sp)
+    system.memories[0].contents[0:input_data_length] = input_data
+    for i in range(16):
+        system.processing_elements[i].core.program(programs[i])
+    # TODO: Figure out format for multi-PE scratchpad data.
+    # if has_scratchpad_data:
+    #     system.processing_elements[0].core.scratchpad = scratchpad_data
+
+    # Run the system until halt.
+    halt, interrupted = system.run(interactive, show_processing_elements, show_memories, show_buffers, keep_execution_trace)
+
+    # Retrieve the actual output data.
+    actual_output_data = system.memories[0].contents[input_data_length:input_data_length + expected_output_data_length]
+
+    # Check the output data.
+    if not all(actual_output_data == expected_output_data):
+        print("Test failed!\n")
+        print("expected output:")
+        print(f"{expected_output_data}\n")
+        print("actual output:")
+        print(f"{actual_output_data}\n")
+        print("The snapshot of the system one cycle later would read:\n")
+        system.iterate(False, True, True, True, True)
+        print("")
+    else:
+        print("Test passed!\n")
+        if interrupted:
+            print("Note, however, that the system did not halt of its own accord.\n")
+            print("The snapshot of the system one cycle later would read:\n")
+            system.iterate(False, True, True, True, True)
+            print("")
+
+    # Output any requested execution trace as a CSV.
+    if keep_execution_trace:
+        execution_trace_file_path = arguments["--execution_trace"]
+        execution_trace_data_frame = system.processing_element_traces_as_data_frame
+        execution_trace_data_frame.to_csv(execution_trace_file_path)
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    parsed_arguments = docopt(__doc__)
+    sys.exit(main(parsed_arguments))

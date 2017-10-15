@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import random
+import sys
+
+
+def generate_input_and_expected_output_data():
+    """
+    Write out the input and expected output data to disk.
+    """
+
+    # Seed the PRNG.
+    random.seed(0)
+
+    # Generate the output data.
+    expected_output_data = list(range(1, 32761))
+    expected_output_data_strings = [str(n) for n in expected_output_data]
+
+    # Output the input and output files.
+    with open("input_data.csv", "w") as input_data_file:
+        print("0", file=input_data_file)
+    with open("expected_output_data.csv", "w") as expected_output_data_file:
+        print(", ".join(expected_output_data_strings), file=expected_output_data_file)
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Generate the data.
+    generate_input_and_expected_output_data()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

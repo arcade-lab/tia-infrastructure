@@ -1,0 +1,173 @@
+# Stream loader.
+<processing_element_0>
+
+    # Base address = 0, bound address = 5000.
+    init %r0, $0;
+    init %r1, $5000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o1.0, %i0; deq %i0;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, $5000; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.1, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.1:
+        halt %o1.1; deq %i0;
+
+# Word splitter.
+<processing_element_1>
+
+    # Get a new word.
+    when %p == 00000000 with %i3.0:
+        mov %r0, %i3; deq %i3; set %p = 00000001;
+
+    # First character (also outputting).
+    when %p == 00000001:
+        band %o2.0, %r0, $0xFF; set %p = 00000010;
+
+    # Second character.
+    when %p == 00000010:
+        lsr %r0, %r0, $8; set %p = 10000011;
+
+    # Third character.
+    when %p == 00000011:
+        lsr %r0, %r0, $8; set %p = 10000100;
+
+    # Fourth character.
+    when %p == 00000100:
+        lsr %r0, %r0, $8; set %p = 10000000;
+
+    # Output the lower byte.
+    when %p == 1XXXXXXX:
+        band %o2.0, %r0, $0xFF; set %p = 0ZZZZZZZ;
+
+    # Look for a halt.
+    when %p == 00000000 with %i3.1:
+        mov %o2.1, $0; deq %i3; set %p = 00000101;
+
+    # Halt.
+    when %p == 00000101:
+        halt;
+
+# Write address stream generator.
+<processing_element_2>
+
+    # Base address = 5000, bound address = 25000.
+    init %r0, $5000;
+    init %r1, $25000;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o2.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o2.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o2.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o2.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o2.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o2.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o2.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o2.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Halt.
+    when %p == 10000001:
+        halt;
+
+# Search PE.
+<processing_element_3>
+
+    # Look for a halt.
+    when %p == XXXXXXXX with %i0.1:
+        halt; deq %i0;
+
+    # Look for an 'M'.
+    when %p == 00000000 with %i0.0:
+        eq %p7, %i0, $77; set %p = Z0000001;
+    when %p == 10000001 with %i0.0:
+        mov %o2.0, $0; deq %i0; set %p = 00000010;
+    when %p == 00000001 with %i0.0:
+        mov %o2.0, $0; deq %i0; set %p = 00000000;
+
+    # Look for an 'I'.
+    when %p == 00000010 with %i0.0:
+        eq %p7, %i0, $73; set %p = Z0000011;
+    when %p == 10000011 with %i0.0:
+        mov %o2.0, $0; deq %i0; set %p = 00000100;
+    when %p == 00000011 with %i0.0:
+        nop; set %p = 00000000;
+
+    # Look for a 'C'.
+    when %p == 00000100 with %i0.0:
+        eq %p7, %i0, $67; set %p = Z0000101;
+    when %p == 10000101 with %i0.0:
+        mov %o2.0, $0; deq %i0; set %p = 00000110;
+    when %p == 00000101 with %i0.0:
+        nop; set %p = 00000000;
+
+    # Look for an 'R'.
+    when %p == 00000110 with %i0.0:
+        eq %p7, %i0, $82; set %p = Z0000111;
+    when %p == 10000111 with %i0.0:
+        mov %o2.0, $0; deq %i0; set %p = 00001000;
+    when %p == 00000111 with %i0.0:
+        nop; set %p = 00000000;
+
+    # Look for an 'O'.
+    when %p == 00001000 with %i0.0:
+        eq %p7, %i0, $79; set %p = Z0001001;
+    when %p == 10001001 with %i0.0:
+        mov %o2.0, $1; deq %i0; set %p = 00000000;
+    when %p == 00001001 with %i0.0:
+        nop; set %p = 00000000;

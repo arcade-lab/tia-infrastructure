@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+import random
+import sys
+
+import numpy as np
+
+
+def generate_input_and_expected_output_data():
+    """
+    Write out the input and expected output data to disk.
+    """
+
+    # Seed the PRNG.
+    random.seed(0)
+
+    # Make 20,000 semi-random characters with the search string embedded.
+    character_list = []
+    output_list = []
+    for i in range(4000):
+        if random.randint(0, 100) % 5 == 0:
+            character_list += [c for c in "MICRO"]
+            output_list += [0] * 4 + [1]
+        else:
+            test = [chr(random.randint(32, 126)) for _ in range(5)]
+            character_list += test
+            if "".join(test) == "MICRO":  # Highly unlikely...
+                output_list += [0] * 4 + [1]
+            else:
+                output_list += [0] * 5
+
+    # Put the random characters into 32-bit words.
+    word_list = []
+    for i in range(int(20000 / 4)):
+        word = 0
+        for j, character in enumerate(reversed(character_list[4 * i:4 * i + 4])):
+            word |= ord(character)
+            if j != 3:
+                word <<= 8
+        word_list.append(word)
+
+    # Convert the lists to strings.
+    input_data_strings = [str(np.uint32(word)) for word in word_list]
+    expected_output_data_strings = [str(np.uint32(output)) for output in output_list]
+
+    # Output the input and output files.
+    with open("input_data.csv", "w") as input_data_file:
+        print(", ".join(input_data_strings), file=input_data_file)
+    with open("expected_output_data.csv", "w") as expected_output_data_file:
+        print(", ".join(expected_output_data_strings), file=expected_output_data_file)
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Generate the data.
+    generate_input_and_expected_output_data()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

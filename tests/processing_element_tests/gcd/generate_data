@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import struct
+import sys
+
+
+def generate_input_data():
+    """
+    Write out the input data to disk.
+    """
+
+    # Open the input data file (using internal exception handling).
+    input_data_file = open("input_data.bin", "wb")
+
+    # Write the dummy input data.
+    packed_word = struct.pack("<I", 0);
+    input_data_file.write(packed_word);
+
+    # Close the input data file.
+    input_data_file.close()
+
+
+def generate_expected_output_data():
+    """
+    Write out the output data to disk.
+    """
+
+    # Open the expected output data file (using internal exception handling).
+    expected_output_data_file = open("expected_output_data.bin", "wb")
+
+    # Write the GCD result.
+    packed_word = struct.pack("<I", 18)
+    expected_output_data_file.write(packed_word);
+
+    # Close the expected output data file.
+    expected_output_data_file.close()
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Generate the data.
+    generate_input_data()
+    generate_expected_output_data()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

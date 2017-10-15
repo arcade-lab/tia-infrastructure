@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+import struct
+import sys
+
+import numpy as np
+
+
+def main(argv):
+    """
+    Entry point.
+    """
+
+    # Check usage and parse the arguments.
+    if len(argv) != 3:
+        print("Usage: csv_to_bin CSV_INPUT_FILE BINARY_OUTPUT_FILE.", file=sys.stderr)
+        return 1
+
+    # Parse the arguments.
+    csv_input_file_location = argv[1]
+    binary_output_file_location = argv[2]
+
+    # Read the input file.
+    input_data = np.genfromtxt(csv_input_file_location, delimiter=',', comments='#', dtype = np.int64)
+    if not input_data.shape:
+        input_data = [input_data]
+
+    # Open and write the output file.
+    with open(binary_output_file_location, "wb") as binary_output_file:
+        for word in input_data:
+            packed_word = struct.pack("<I", word)
+            binary_output_file.write(packed_word)
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

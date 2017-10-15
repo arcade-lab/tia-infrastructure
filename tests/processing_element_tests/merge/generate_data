@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+
+import random
+import struct
+import sys
+
+
+def generate_input_and_expected_output_data():
+    """
+    Write out the input and expected output data to disk.
+    """
+
+    with open("/home/trepetti/Workspace/Research/TIA/tests/processing_element_tests/merge_1x1/input_data.csv") as input_csv_file:
+        input_csv_string = input_csv_file.read()
+    input_csv_list = input_csv_string.split(',')
+    input_values = [int(string) for string in input_csv_list]
+
+    input_data_file = open("input_data.bin", "wb")
+
+    for value in input_values:
+        packed_word = struct.pack("<i", value)
+        input_data_file.write(packed_word)
+
+    input_data_file.close()
+
+    with open("/home/trepetti/Workspace/Research/TIA/tests/processing_element_tests/merge_1x1/expected_output_data.csv") as expected_output_csv_file:
+        expected_output_csv_string = expected_output_csv_file.read()
+    expected_output_csv_list = expected_output_csv_string.split(',')
+    expected_output_values = [int(string) for string in expected_output_csv_list]
+
+    expected_output_data_file = open("expected_output_data.bin", "wb")
+
+    # Write the mean.
+    for value in expected_output_values:
+        packed_word = struct.pack("<i", value)
+        expected_output_data_file.write(packed_word)
+
+    # Close the expected output data file.
+    expected_output_data_file.close()
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Generate the data.
+    generate_input_and_expected_output_data()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

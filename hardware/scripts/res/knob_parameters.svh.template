@@ -1,0 +1,149 @@
+`ifndef KNOB_PARAMETERS_SVH
+`define KNOB_PARAMETERS_SVH
+
+/*
+ * User-editable parameters.
+ */
+
+// --- Microarchitecture ---
+
+// Selected core type.
+`define ${tia_core_architecture}
+
+// Integer architecture.
+`ifdef TIA_INTEGER_CORE
+    `define TIA_CORE integer_core
+
+// Pipelines from MICRO.
+`elsif TIA_TDX_CORE
+    `define TIA_CORE tdx_core
+`elsif TIA_TDX1_X2_CORE
+    `define TIA_CORE tdx1_x2_core
+`elsif TIA_TD_X_CORE
+    `define TIA_CORE td_x_core
+`elsif TIA_TD_X1_X2_CORE
+    `define TIA_CORE td_x1_x2_core
+`elsif TIA_T_DX_CORE
+    `define TIA_CORE t_dx_core
+`elsif TIA_T_DX1_X2_CORE
+    `define TIA_CORE t_dx1_x2_core
+`elsif TIA_T_D_X_CORE
+    `define TIA_CORE t_d_x_core
+`elsif TIA_T_D_X1_X2_CORE
+    `define TIA_CORE t_d_x1_x2_core
+
+// Canary (one microarchitecture must be selected).
+`else
+    `define TIA_CORE canary_for_invalid_core_type
+`endif
+
+// --- Routing Architecture ---
+
+// Selected router type.
+`define ${tia_router_type}
+
+// Software.
+`ifdef TIA_SOFTWARE_ROUTER
+    `define TIA_ROUTER software_router
+
+// Switch
+`elsif TIA_SWITCH_ROUTER
+    `define TIA_ROUTER switch_router
+
+// Canary (one router type must be selected).
+`else
+    `define TIA_ROUTER canary_for_invalid_router_type
+`endif
+
+// --- Data and Instruction Representation ---
+
+// Data word size.
+parameter TIA_WORD_WIDTH = ${tia_device_word_width};
+
+// Memory-mapped instruction representation.
+parameter TIA_MM_INSTRUCTION_WIDTH = ${tia_mm_instruction_width};
+
+// Maximum number of instructions per PE.
+parameter TIA_MAX_NUM_INSTRUCTIONS = ${tia_num_instructions};
+
+// Instruction storage medium.
+${tia_no_latch_based_instruction_memory}`define TIA_LATCH_BASED_INSTRUCTION_MEMORY
+${tia_no_ram_based_immediate_storage}`define TIA_RAM_BASED_IMMEDIATE_STORAGE
+
+
+// --- Instruction Support ---
+
+// Whether to include multipliers (which should be considered part of the core ISA, but can be
+// disabled for debug/timing/fitting purposes.)
+${tia_does_not_have_multiplier}`define TIA_HAS_MULTIPLIER
+${tia_does_not_have_two_word_product_multiplier}`define TIA_HAS_TWO_WORD_PRODUCT_MULTIPLIER
+
+// Whether to include a PE-private scratchpad and the associated load and store instructions.
+${tia_does_not_have_scratchpad}`define TIA_HAS_SCRATCHPAD
+
+// Scratchpad size.
+parameter TIA_NUM_SCRATCHPAD_WORDS_IF_ENABLED = ${tia_num_scratchpad_words};
+
+// --- Instruction Triggering ---
+
+// Number of predicates to store state.
+parameter TIA_NUM_PREDICATES = ${tia_num_predicates};
+
+// Tags for inter-PE/ME channels.
+parameter TIA_NUM_TAGS = ${tia_num_tags};
+
+// Maximum number of input channels upon which an instruction can depend.
+parameter TIA_MAX_NUM_INPUT_CHANNELS_TO_CHECK = ${tia_max_num_input_channels_to_check};
+
+// Effective queue status.
+${tia_does_not_have_effective_queue_status}`define TIA_HAS_FULL_INFORMATION_CHANNEL_STATUS_UPDATING
+
+// Predicate prediction and speculative execution.
+${tia_does_not_have_speculative_predicate_unit}`define TIA_HAS_SPECULATIVE_PREDICATE_UNIT
+
+// --- Datapath and Channels ---
+
+// Number of data registers.
+parameter TIA_NUM_REGISTERS = ${tia_num_registers};
+
+// Number of input and output channels.
+parameter TIA_NUM_INPUT_CHANNELS = ${tia_num_input_channels};
+parameter TIA_NUM_OUTPUT_CHANNELS = ${tia_num_output_channels};
+
+// Instruction immediates.
+parameter TIA_IMMEDIATE_WIDTH = ${tia_immediate_width};
+
+// How many input channels we can dequeue in a single cycle.
+parameter TIA_MAX_NUM_INPUT_CHANNELS_TO_DEQUEUE = TIA_NUM_INPUT_CHANNELS; // TODO: remove.
+
+// --- Array ---
+
+// TODO: Dimensions of the array.
+
+// --- Interconnect ---
+
+// Number of physical planes.
+parameter TIA_NUM_PHYSICAL_PLANES = ${tia_num_physical_planes};
+
+// Generic channel FIFO depth.
+parameter TIA_CHANNEL_BUFFER_FIFO_DEPTH = ${tia_channel_buffer_depth};
+
+// Link buffer FIFO depth.
+parameter TIA_LINK_BUFFER_FIFO_DEPTH = ${tia_router_buffer_depth};
+
+// Memory link buffer FIFO depth.
+parameter TIA_MEMORY_LINK_BUFFER_FIFO_DEPTH = ${tia_test_data_memory_buffer_depth};
+
+// --- Memory ---
+
+parameter TIA_NUM_DATA_MEMORY_WORDS = ${tia_num_test_data_memory_words};
+
+// --- Monitors and Performance Counters ---
+
+// Comment out to remove PE debug monitors.
+${tia_does_not_have_processing_element_debug_monitor}`define TIA_HAS_CORE_MONITOR
+
+// Comment out to disable particular performance counter features.
+${tia_does_not_have_processing_element_performance_counters}`define TIA_HAS_CORE_PERFORMANCE_COUNTERS
+
+`endif // KNOB_PARAMETERS_SVH

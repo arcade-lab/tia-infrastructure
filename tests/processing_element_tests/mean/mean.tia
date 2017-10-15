@@ -1,0 +1,45 @@
+# Only one PE.
+<pe_0>
+
+    init %r0, $0; # Initial load address.
+    init %r1,  $0; # Accumulator
+    init %r2, $16384; # Bound and store address.
+
+    # Accumulate returning loads.
+    when %p == XXXXXXXX with %i0.0:
+        add %r1, %r1, %i0; deq %i0;
+
+    # 8x unrolled load loop.
+    when %p == 00000000:
+        uge %p7, %r0, %r2; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %r0, %r0, $4; set %p = 00000000;
+
+    # Send a halt canary to the read port.
+    when %p == 10000001:
+        mov %o0.1, $0; set %p = 10000010;
+
+    # Perform the shift and output the result.
+    when %p == 10000010 with %i0.1:
+        asr %o3.0, %r1, $14; deq %i0; set %p = 10000011;
+
+    # Output a store address, too.
+    when %p == 10000011:
+        mov %o2.0, %r2; set %p = 10000100;
+
+    # Halt.
+    when %p == 10000100:
+        halt;

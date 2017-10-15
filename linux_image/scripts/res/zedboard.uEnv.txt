@@ -1,0 +1,10 @@
+machine_name=zedboard-zynq7
+kernel_image=uImage
+kernel_load_address=0x2080000
+devicetree_image=uImage-zynq-zed.dtb
+devicetree_load_address=0x2000000
+bootargs=console=ttyPS0,115200 root=/dev/mmcblk0p2 rw rootwait earlyprintk uio_pdrv_genirq.of_id=generic-uio
+loadkernel=fatload mmc 0 ${kernel_load_address} ${kernel_image}
+loaddtb=fatload mmc 0 ${devicetree_load_address} ${devicetree_image}
+bootkernel=run loadkernel && run loaddtb && bootm ${kernel_load_address} - ${devicetree_load_address}
+uenvcmd=run bootkernel

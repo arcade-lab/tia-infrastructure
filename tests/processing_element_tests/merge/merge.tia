@@ -1,0 +1,89 @@
+<pe_0>
+## Predicate structure:
+##
+## X XXX XX XX
+## A B   C  D
+##
+## A = init done
+## B = init then once init done, writer loop
+## C = left reader
+## D = right reader
+
+
+#######################################################
+## Initialization code
+
+# when %p == 0000XXXX:
+#     mov %r0, $0; set %p = 0001XXXX;
+
+# when %p == 0001XXXX:
+#     mov %r1, $4096; set %p = 0010XXXX;
+
+# when %p == 0010XXXX:
+#    mov %r2, $8192; set %p = 10000000;
+
+# Initialization done: p=10000000
+
+# Register initialization.
+init %r0, $0;
+init %r1, $4096;
+init %r2, $8192;
+
+#######################################################
+## Writer loop
+
+when %p == 0000XXXX:
+      uge %p6, %r2, $16384; set %p = 0X11XXXX;
+
+when %p == 0011XXXX:
+     mov %o2.0, %r2; set %p = 0001XXXX;
+
+when %p == 0001XXXX with %i0.0, %i1.0:
+     uge %p4, %i1, %i0; set %p = 010XXXXX;
+
+when %p == 0101XXXX with %i0.0, %i1.0:
+     mov %o3.0, %i0; deq %i0; set %p = 0010XXXX;
+
+when %p == 0001XX11 with %i0.0:
+     mov %o3.0, %i0; deq %i0; set %p = 0010XXXX;
+
+when %p == 0100XXXX with %i0.0, %i1.0:
+     mov %o3.0, %i1; deq %i1; set %p = 0010XXXX;
+
+when %p == 000111XX with %i1.0:
+     mov %o3.0, %i1; deq %i1; set %p = 0010XXXX;
+
+when %p == 0010XXXX:
+     add %r2, %r2, $1; set %p = 0000XXXX;
+
+when %p == 01111111:
+     halt;
+
+#######################################################
+## Left reader loop
+
+when %p == 0XXX00XX:
+    uge %p2, %r0, $4096; set %p = 0XXX1XXX;
+
+when %p == 0XXX10XX:
+    mov %o0.0, %r0; set %p = 0XXX01XX;
+
+when %p == 0XXX01XX:
+    add %r0, %r0, $1; set %p = 0XXX00XX;
+
+# Exit predicate condition: 1XXX11XX
+
+#######################################################
+## Right reader loop
+
+when %p == 0XXXXX00:
+    uge %p0, %r1, $8192; set %p = 0XXXXX1X;
+
+when %p == 0XXXXX10:
+    mov %o1.0, %r1; set %p = 0XXXXX01;
+
+when %p == 0XXXXX01:
+    add %r1, %r1, $1; set %p = 0XXXXX00;
+
+# Exit predicate condition: 1XXXXX11
+

@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+import random
+import sys
+
+import numpy as np
+
+
+def generate_input_and_expected_output_data():
+    """
+    Write out the input and expected output data to disk.
+    """
+
+    # The sinc function is maximal at 0 (the 10,000th element).
+    x = np.arange(-10, 10, 0.001)
+    y = np.sinc(x) * 1000
+    y = y.astype(np.int32)
+    arg_max = 1000
+    input_data_strings = [str(np.uint32(n)) for n in y]
+    expected_output_data_string = str(10000)
+
+    # Output the input and output files.
+    with open("input_data.csv", "w") as input_data_file:
+        print(", ".join(input_data_strings), file=input_data_file)
+    with open("expected_output_data.csv", "w") as expected_output_data_file:
+        print(expected_output_data_string, file=expected_output_data_file)
+
+
+def main():
+    """
+    Entry point.
+    """
+
+    # Generate the data.
+    generate_input_and_expected_output_data()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,46 @@
+# Only one PE.
+<processing_element_0>
+
+    # Register initialization.
+    init %r0, $0; # Base.
+    init %r1, $5000; # Bound.
+    init %r2, $539884526;
+    init %r3, $1495839996;
+    init %r4, $3528191666;
+    init %r5, $3529655530;
+    init %r6, $-1663751784;
+    init %r7, $0; # Temporary.
+
+    # Stress the integer multiplication unit for power analysis.
+
+    # for i in range(100000):
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        # Lower word multiptlication.
+        when %p == 00000001:
+            lmul %r7, %r2, %r3; set %p = 00000010;
+
+        # Upper word signed multiplication
+        when %p == 00000010:
+            shmul %r7, %r5, %r6; set %p = 00000011;
+
+        # Upper word unsigned multiplication.
+        when %p == 00000011:
+            uhmul %r7, %r3, %r4; set %p = 00000100;
+
+        # Multiply-accumulate.
+        when %p == 00000100:
+            mac %r7, %r2, %r3, %r4; set %p = 00000101;
+
+        # Increment.
+        when %p == 00000101:
+            add %r0, %r0, $1; set %p = 00000000;
+
+    # End of loop, output one to memory: result is not important.
+    when %p == 10000001:
+        mov %o{2, 3}.0, $1; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010:
+        halt;

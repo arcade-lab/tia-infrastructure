@@ -1,0 +1,7 @@
+[
+  ["read_port_1", 0, "processing_element_3", 0],
+  ["processing_element_1", 0, "read_port_1", 0],
+  ["processing_element_2", 2, "write_port_address", 0],
+  ["processing_element_3", 2, "write_port_data", 0],
+  ["processing_element_1", 1, "processing_element_2", 1]
+]

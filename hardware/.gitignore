@@ -1,0 +1,9 @@
+.*.swp
+asic_package
+configurations
+*design_cache
+demo_configuration_library
+platform.json
+*.vcd
+*.hex
+*.bin

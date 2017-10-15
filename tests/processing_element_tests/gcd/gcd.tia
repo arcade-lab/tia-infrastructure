@@ -1,0 +1,34 @@
+# Only one PE.
+<pe_0>
+
+    # Register initialization.
+    init %r0, $12345678;
+    init %r1, $90;
+
+    # while a != b:
+    when %p == 00000000:
+        ne %p7, %r0, %r1; set %p = Z0000001;
+
+        # if a > b:
+        when %p == 10000001:
+            ugt %p6, %r0, %r1; set %p = 1Z000010;
+
+            # a = a - b
+            when %p == 11000010:
+                sub %r0, %r0, %r1; set %p = 00000000;
+
+        # else:
+
+            # b = b - a
+            when %p == 10000010:
+                sub %r1, %r1, %r0; set %p = 00000000;
+
+    # a = mem[1]
+    when %p == 00000001:
+        mov %o2.0, $1; set %p = 00000010;
+    when %p == 00000010:
+        mov %o3.0, %r0; set %p = 00000011;
+
+    # Halt.
+    when %p == 00000011:
+        halt;

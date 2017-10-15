@@ -1,0 +1,25 @@
+# Only one PE.
+<pe_0>
+
+    # Register file initialization.
+    init %r0, $123456789;
+
+    # Save the magic number to the scratchpad.
+    when %p == 00000000:
+        ssw %r0, $0; set %p = 00000001;
+
+    # Load the magic number from the scratchpad.
+    when %p == 00000001:
+        lsw %r1, $0; set %p = 00000010;
+
+    # Start saving our result.
+    when %p == 00000010:
+        mov %o2.0, $1; set %p = 00000011;
+
+    # Save the result.
+    when %p == 00000011:
+        mov %o3.0, %r1; set %p = 00000100;
+
+    # Halt.
+    when %p == 00000100:
+        halt;

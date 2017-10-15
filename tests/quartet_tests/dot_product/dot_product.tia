@@ -1,0 +1,117 @@
+# y loader.
+<processing_element_0>
+
+    # Base address = 0, bound address = 10000.
+    init %r0, $0;
+    init %r1, $10000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # 4x unroll guaranteed not to deadlock due to FIFO depths.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %r0, %r0, $4; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.1, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.1:
+        halt %o2.1; deq %i0;
+
+# x loader.
+<processing_element_1>
+
+    # Base address = 10000, bound address = 20000.
+    init %r0, $10000;
+    init %r1, $20000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # 4x unroll guaranteed not to deadlock due to FIFO depths.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %r0, %r0, $4; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.1, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.1:
+        halt %o2.1; deq %i0;
+
+
+# Write address generator and routing PE.
+<processing_element_2>
+
+    # Output address is 20000.
+    init %r0, $20000;
+
+    # Routing is the first priority.
+    when %p == 00000000 with %i0.0:
+        mov %o1.0, %i0; deq %i0;
+
+    # Look for a halt.
+    when %p == 00000000 with %i0.1:
+        mov %o1.1, %i0; deq %i0; set %p = 00000001;
+
+    # Store the output at 20000.
+    when %p == 00000001:
+        mov %o2.0, %r0; set %p = 00000010;
+
+    # Halt.
+    when %p == 00000010:
+        halt;
+
+# Dot product PE.
+<processing_element_3>
+
+    # Zero out the accumulator.
+    init %r0, $0;
+
+    # Perform the mac operation.
+    when %p == 00000000 with %i0.0, %i3.0:
+        mac %r0, %r0, %i0, %i3; deq %i0, %i3;
+
+    # Look for a halt.
+    when %p == 00000000 with %i0.1, %i3.1:
+       mov %o2.0, %r0; deq %i0, %i3; set %p = 00000001;
+
+    # Halt.
+    when %p == 00000001:
+        halt;
+

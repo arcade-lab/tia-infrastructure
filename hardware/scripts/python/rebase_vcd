@@ -1,0 +1,78 @@
+#!/usr/bin/env python2
+
+"""
+A utility for rebasing the timescale of a VCD file on the VLSI lab servers (hence why it is written in Python 2).
+
+PrimeTime does not accept any timescale other than a single unit (i.e. 1ns or 1ps). As a result, we base all our VCDs
+with 1ps and adjust the #* time marks accordingly.
+"""
+
+import sys
+
+
+def rebase(multiple, input_vcd_file, output_vcd_file):
+    """
+    Perform the string manipulation necessary to multiply the VCD timestamps by some multiple.
+
+    :param multiple: positive integer multiple
+    :param input_vcd_file: input file handle
+    :param output_vcd_file: output file handle
+    """
+
+    # Simple in place file edit.
+    for line in input_vcd_file:
+        if line.startswith('#'):
+            timestamp = int(line[1::])
+            timestamp *= multiple
+            modified_line = "#%d\n" % timestamp
+            output_vcd_file.write(modified_line)
+        else:
+            output_vcd_file.write(line)
+
+
+def main(argv):
+    """
+    Entry point.
+
+    :param argv: sys.argv arguments
+    :return: exit code
+    """
+
+    # Check usage.
+    if len(argv) != 4:
+        print "Usage: ./rebase_vcd MULTIPLE INPUT_VCD_FILE OUTPUT_VCD_FILE"
+        return 1
+
+    # Parse the arguments.
+    try:
+        multiple = int(argv[1])
+    except ValueError:
+        print "The multiple must be an integer."
+        return 1
+    if multiple <= 0:
+        print "The multiple must be strictly positive."
+        return 1
+    try:
+        input_vcd_file = open(argv[2])
+    except:
+        e = sys.exc_info()[0]
+        print "Unable to open the VCD file %s for reading: %s" % (argv[2], str(e))
+        return 1
+    try:
+        output_vcd_file = open(argv[3], "w")
+    except:
+        e = sys.exc_info()[0]
+        print "Unable to open the VCD file %s for writing: %s" % (argv[3], str(e))
+        return 1
+
+    # Main application logic.
+    modified_vcd_string = rebase(multiple, input_vcd_file, output_vcd_file)
+    input_vcd_file.close()
+    output_vcd_file.close()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+
+import random
+import sys
+
+import numpy as np
+from tqdm import tqdm
+
+
+NUM_ENTRIES = 3000
+
+
+class InsertOnlyBST:
+    """
+    A BST with no balance or remove operations.
+    """
+
+    def __init__(self, size=100):
+        """
+        Initializer.
+
+        :param size: number of entries in the array.
+        """
+
+        # Simple initializer.
+        self.size = size * 3  # Three words per node.
+        self.memory = np.zeros(self.size, dtype=np.uint32)
+        self.break_pointer = 0
+
+    def search(self, value):
+        """
+        Determine if a value is present in the tree.
+
+        :param value: the value to search for.
+        :return: a tuple of whether the item was in the tree and a node pointer to either the node or its parent.
+        """
+
+        # Iterative BST search.
+        if self.break_pointer == 0:
+            return False, None
+        node_pointer = 0
+        while True:
+            candidate = self.memory[node_pointer]
+            if candidate == value:
+                return True, node_pointer
+            else:
+                if value < candidate:
+                    next_pointer = self.memory[node_pointer + 1]
+                else:
+                    next_pointer = self.memory[node_pointer + 2]
+            if next_pointer == 0:
+                return False, node_pointer
+            node_pointer = next_pointer
+            if node_pointer == 0:
+                break
+
+    def insert(self, value):
+        """
+        Insert a value into the tree using a quasi-heap memory allocator.
+
+        :param value: value to insert into the tree.
+        """
+
+        # Check if there is room for the item.
+        if self.break_pointer == self.size:
+            raise RuntimeError("Memory full.")
+
+        # Search for the item.
+        present, parent_pointer = self.search(value)
+
+        # Node is the root.
+        if not present and parent_pointer is None:
+            self.memory[0] = value
+
+        # If the node is not the root...
+        if present:
+            return
+        elif not present and parent_pointer is None:
+            self.memory[0] = value
+        else:
+            parent_value = self.memory[parent_pointer]
+            if value < parent_value:
+                self.memory[parent_pointer + 1] = self.break_pointer
+            else:
+                self.memory[parent_pointer + 2] = self.break_pointer
+            self.memory[self.break_pointer] = value
+
+        # Allocate more memory.
+        self.break_pointer += 3
+
+
+def main():
+    """
+    Entry point.
+
+    :return: exit code
+    """
+
+    # Seed the PRNG.
+    random.seed(8675309)
+
+    # Make a list of entries and shuffle them for maximum branch entropy and minimum size.
+    series = list(range(1, NUM_ENTRIES + 1))
+    shuffled = []
+    beginning = 0
+    end = NUM_ENTRIES - 1
+    while beginning != end:
+        if random.randint(0, 1):
+            shuffled.append(series[beginning])
+            beginning += 1
+        else:
+            shuffled.append(series[end])
+            end -= 1
+    shuffled.append(beginning)
+
+    # Add the values to the tree and validate they are reachable.
+    tree = InsertOnlyBST(NUM_ENTRIES)
+    for value in tqdm(shuffled, desc="inserting nodes"):
+        tree.insert(value)
+    for value in tqdm(shuffled, desc="validating nodes"):
+        result = tree.search(value)[0]
+        assert result
+
+    # Write out the tree.
+    with open("input_data.csv", "w") as input_data_file:
+        print(", ".join(str(i) for i in tree.memory), file=input_data_file)
+
+    # Print the value to search the tree for for maximum search depth.
+    print(shuffled[-1])
+
+    # Exit successfully.
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

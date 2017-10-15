@@ -1,0 +1,146 @@
+# Boolean loader PE.
+<processing_element_0>
+
+    # Base address = 0, bound address = 10000.
+    init %r0, $0;
+    init %r1, $10000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.2, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.2:
+        halt %o2.2; deq %i0;
+
+# Data loader PE.
+<processing_element_1>
+
+    # Base address = 10000, bound address = 20000.
+    init %r0, $10000;
+    init %r1, $20000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.2, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.2:
+        halt %o2.2; deq %i0;
+
+
+# Write address generator and routing PE.
+<processing_element_2>
+
+    # Base address set to 20000.
+    init %r0, $20000;
+
+    # Check for halt.
+    when %p == XXXXXXXX with %i0.2:
+        halt %o1.2; deq %i0;
+
+    # If the Boolean is true...
+    when %p == 00000000 with %i0.0:
+        eq %p7, %i0, $1; set %p = Z0000001;
+
+        # Then emit the index pointer on the load address channel.
+        when %p == 10000001 with %i0.0:
+            mov %o2.0, %r0; set %p = 10000010;
+
+        # Increment the load pointer.
+        when %p == 10000010 with %i0.0:
+            add %r0, %r0, $1; set %p = 10000011;
+
+    # Forward a false condition.
+    when %p == 00000001 with %i0.0:
+        mov %o1.0, %i0; deq %i0; set %p = 00000000;
+
+    # Forward a true condition.
+    when %p == 10000011 with %i0.0:
+        mov %o1.1, %i0; deq %i0; set %p = 00000000;
+
+
+# Filter PE.
+<processing_element_3>
+
+    # Check for halt.
+    when %p == XXXXXXXX with %i0.2, %i3.2:
+        halt; deq %i0, %i3;
+
+    # If the Boolean tag is true, forward.
+    when %p == XXXXXXXX with %i0.0, %i3.1:
+        mov %o2.0, %i0; deq %i0, %i3;
+
+    # If the Boolean tag is false, discard.
+    when %p == XXXXXXXX with %i0.0, %i3.0:
+        nop; deq %i0, %i3;

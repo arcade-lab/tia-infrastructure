@@ -1,0 +1,57 @@
+# Only one PE.
+<pe_0>
+
+    # Register initialization.
+    init %r0, $0;
+    init %r1, $1480; # Target.
+    init %r2, $9000; # Store address.
+
+    # do {
+
+        # Dereference the pointer.
+        when %p == 00000000:
+            mov %o0.0, %r0; set %p = 00000001;
+
+        # Check to see if we found the target.
+        when %p == 00000001 with %i0.0:
+            eq %p7, %i0, %r1; set %p = Z0000010;
+
+        # See if we are above or below the target if we missed it.
+        when %p == 00000010 with %i0.0:
+            ult %p6, %i0, %r1; deq %i0; set %p = 0Z000011;
+
+        # If below, the next pointer is the lower pointer.
+        when %p == 00000011:
+            add %r0, %r0, $1; set %p = 00000100;
+
+        # If above, the next pointer is the higher pointer.
+        when %p == 01000011:
+            add %r0, %r0, $2; set %p = 00000100;
+
+        # Look up the next pointer.
+        when %p == 00000100:
+            mov %o0.0, %r0; set %p = 00000101;
+
+        # Read the next pointer.
+        when %p == 00000101 with %i0.0:
+            mov %r0, %i0; deq %i0; set %p = 00000110;
+
+        # Check for a null pointer.
+        when %p == 00000110:
+            eq %p7, %r0, $0; set %p = Z0000000;
+
+    # } while (target not found and pointer not null);
+
+    # Output the result depending on how we got out of the loop.
+    when %p == 10000010 with %i0.0:
+        mov %o3.0, $1; deq %i0; set %p = 11000000; # Success.
+    when %p == 10000000:
+        mov %o3.0, $0; set %p = 11000000; # Failure.
+
+    # Output the store address.
+    when %p == 11000000:
+        mov %o2.0, %r2; set %p = 11000001;
+
+    # Halt.
+    when %p == 11000001:
+        halt;

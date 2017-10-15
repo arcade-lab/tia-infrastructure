@@ -1,0 +1,169 @@
+# Unused.
+<processing_element_0>
+
+    # Off.
+    when %p == XXXXXXXX:
+        halt;
+
+# Stream loader.
+<processing_element_1>
+
+    # Base address = 0, bound address = 4000.
+    init %r0, $0;
+    init %r1, $4000;
+
+    # Asynchronously complete the loads.
+    when %p == XXXXXXXX with %i0.0:
+        mov %o2.0, %i0; deq %i0;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o0.0, %r0, $0; set %p = 00000010;
+
+        when %p == 00000010:
+            add %o0.0, %r0, $1; set %p = 00000011;
+
+        when %p == 00000011:
+            add %o0.0, %r0, $2; set %p = 00000100;
+
+        when %p == 00000100:
+            add %o0.0, %r0, $3; set %p = 00000101;
+
+        when %p == 00000101:
+            add %o0.0, %r0, $4; set %p = 00000110;
+
+        when %p == 00000110:
+            add %o0.0, %r0, $5; set %p = 00000111;
+
+        when %p == 00000111:
+            add %o0.0, %r0, $6; set %p = 00001000;
+
+        when %p == 00001000:
+            add %o0.0, %r0, $7; set %p = 00001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = 00000000;
+
+    # Emit halt canary.
+    when %p == 10000001:
+        mov %o0.1, $0; set %p = 10000010;
+
+    # Halt.
+    when %p == 10000010 with %i0.1:
+        halt %o2.1; deq %i0;
+
+# Write address generator.
+<processing_element_2>
+
+    # Base address = 4000, bound address = 6000
+    init %r0, $4000;
+    init %r1, $6000;
+
+    # 8x unroll for speed.
+    when %p == 00000000:
+        uge %p7, %r0, %r1; set %p = Z0000001;
+
+        when %p == 00000001:
+            add %o2.0, %r0, $0; set %p = Z0000010;
+
+        when %p == 00000010:
+            add %o2.0, %r0, $1; set %p = Z0000011;
+
+        when %p == 00000011:
+            add %o2.0, %r0, $2; set %p = Z0000100;
+
+        when %p == 00000100:
+            add %o2.0, %r0, $3; set %p = Z0000101;
+
+        when %p == 00000101:
+            add %o2.0, %r0, $4; set %p = Z0000110;
+
+        when %p == 00000110:
+            add %o2.0, %r0, $5; set %p = Z0000111;
+
+        when %p == 00000111:
+            add %o2.0, %r0, $6; set %p = Z0001000;
+
+        when %p == 00001000:
+            add %o2.0, %r0, $7; set %p = Z0001001;
+
+        when %p == 00001001:
+            add %r0, %r0, $8; set %p = Z0000000;
+
+    # Halt.
+    when %p == 10000001:
+        halt;
+
+
+# Divider PE.
+<processing_element_3>
+
+    # %r0 = bit index
+    # %r1 = numerator
+    # %r2 = denominator
+    # %r3 = quotient
+    # %r4 = remainder
+    # %r5 = temporary variable
+
+    # Look for a halt.
+    when %p == 00000000 with %i0.1:
+        halt; deq %i0;
+
+    # Get the numerator.
+    when %p == 00000000 with %i0.0:
+        mov %r1, %i0; deq %i0; set %p = 00000001;
+
+    # Skip ahead if the numerator has any leading zeros.
+    when %p == 00000001:
+        clz %r0, %r1, $1; set %p = 00000010;
+
+    # Get the denominator.
+    when %p == 00000010 with %i0.0:
+        mov %r2, %i0; deq %i0; set %p = 00000011;
+
+    # Clear the quotient.
+    when %p == 00000011:
+        mov %r3, $0; set %p = 00000100;
+
+    # Clear the remainder.
+    when %p == 00000100:
+        mov %r4, $0; set %p = 00000101;
+
+    # While we are still not at the zeroth bit...
+    when %p == 00000101:
+        slt %p7, %r0, $0; set %p = Z0000110;
+
+        # Shift the remainder left by one.
+        when %p == 00000110:
+            sl %r4, %r4, $1; set %p = 00000111;
+
+        # Get the index bit of the numerator.
+        when %p == 00000111:
+            gb %r5, %r1, %r0; set %p = 00001000;
+
+        # Set the lowest bit of the remainder to that bit.
+        when %p == 00001000:
+            sb %r4, %r4, $0, %r5; set %p = 00001001;
+
+        # If the remainder is greater than the denominator...
+        when %p == 00001001:
+            uge %p6, %r4, %r2; set %p = 0Z001010;
+
+            # Subtract the denominator from the remainder.
+            when %p == 01001010:
+                sub %r4, %r4, %r2; set %p = 01001011;
+
+            # Set the index bit of the quotient to one.
+            when %p == 01001011:
+                mb %r3, %r3, %r0; set %p = 00001010;
+
+        # Move down to the next lower bit.
+        when %p == 00001010:
+            sub %r0, %r0, $1; set %p = 00000101;
+
+    # We hit the zeroth bit, so output the result.
+    when %p == 10000110:
+        mov %o2.0, %r3; set %p = 00000000;

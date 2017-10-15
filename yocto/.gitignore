@@ -1,0 +1,8 @@
+.*.swp
+.bash*
+.bash_history
+.python-history
+build
+sdk
+zedboard
+zc706

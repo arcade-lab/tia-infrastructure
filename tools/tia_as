@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+
+"""
+Usage: tia_as [-h] [--macros MACROS_FILE] [-o OUTPUT_FILE] [-x HEX_OUTPUT_FILE] PLATFORM_FILE TIA_ASM_FILE
+
+An assembler for our in-house TIA architecture. The two primary goals of the assembler are its functionality and the
+ability to output informative error messages. Only instructions with memory mapped sizes in multiples of 32 bit words
+are supported. All instructions are written into the output file from highest word to lowest, and in turn, each word
+is written as a little endian 32-bit unsigned integer. The hex output option will write out the instructions in hex
+syntax to a specified file.
+
+Arguments:
+    PLATFORM_FILE               JSON specification of the target architecture
+    TIA_ASM_FILE                program of instructions to assemble
+
+Options:
+    -h --help                   this description
+    --macros MACROS_FILE        specify a macro definitions file (flat YAML dictionary format)
+    -o OUTPUT_FILE              specify the output location
+    -x HEX_OUTPUT_FILE          request the instructions be written as a hex file as well
+"""
+
+import json
+import struct
+import sys
+
+from docopt import docopt
+import yaml
+
+from assembly.exception import AssemblyException
+from assembly.machine_code import build_program_binary
+from assembly.program import apply_macros, split_program_by_processing_element_label, ProcessingElementProgram
+from parameters.core_parameters import CoreParameters
+
+
+def main(arguments):
+    """
+    Entry point.
+
+    :param arguments: arguments parsed by docopt
+    :return: exit code
+    """
+
+    # --- Argument Parsing ---
+
+    # Check usage, and parse the arguments.
+    has_macros = False
+    if arguments["--macros"] is not None:
+        macros_yaml_file_path = arguments["--macros"]
+        has_macros = True
+        try:
+            with open(macros_yaml_file_path) as macros_yaml_file:
+                macros_yaml_string = macros_yaml_file.read()
+        except:
+            e = sys.exc_info()[1]
+            error_string = f"Unable to open the macro file {macros_yaml_file_path}: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    output_file_path = "output.bin"
+    if arguments["-o"] is not None:
+        output_file_path = arguments["-o"]
+    try:
+        output_file = open(output_file_path, "wb")
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the output file for writing {output_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    if arguments["-x"] is not None:
+        has_hex_output_file = True
+        hex_output_file_path = arguments["-x"]
+        try:
+            hex_output_file = open(hex_output_file_path, "w")
+        except:
+            e = sys.exc_info()[1]
+            error_string = f"Unable to open the hex output file for writing {hex_output_file_path}: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    else:
+        has_hex_output_file = False
+    platform_json_file_path = arguments["PLATFORM_FILE"]
+    try:
+        with open(platform_json_file_path) as platform_json_file:
+            platform_json_string = platform_json_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the platform file {platform_json_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    assembly_file_path = arguments["TIA_ASM_FILE"]
+    try:
+        with open(assembly_file_path) as assembly_file:
+            assembly_string = assembly_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the TIA assembly file {assembly_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+
+    # --- Assemble the Source Assembly  ---
+
+    # Parse and apply macros, if needed.
+    if has_macros:
+        try:
+            macros_dictionary = yaml.load(macros_yaml_string)
+        except json.JSONDecodeError as e:
+            error_string = f"The provided macro definitions file is not valid: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+        assembly_string = apply_macros(macros_dictionary, assembly_string)
+
+    # Parse the parameters.
+    parameters_dictionary = json.loads(platform_json_string)
+    core_parameters_dictionary = parameters_dictionary["core"]
+    cp = CoreParameters.from_dictionary(core_parameters_dictionary)
+    cp.validate_instruction_format()
+
+    # Split the assembly per processing element.
+    labels_and_program_strings = split_program_by_processing_element_label(assembly_string)
+
+    # Parse the programs.
+    programs = []
+    for label, program_string in labels_and_program_strings:
+        try:
+            programs.append(ProcessingElementProgram.from_label_and_string(cp, label, program_string))
+        except AssemblyException as e:
+            error_string = f"Program parse error: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    for program in programs:
+        print(f"{len(program.instructions)} instruction(s) parsed in program {program.label}\n")
+
+    # Validate the programs.
+    for program in programs:
+        try:
+            program.validate()
+        except AssemblyException as e:
+            error_string = f"Program validation error: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    print("Programs successfully validated against target architecture.\n")
+
+    # Assemble the programs.
+    binary_encodings = []
+    for program in programs:
+        try:
+            binary_encodings.append(build_program_binary(cp, program))
+        except AssemblyException as e:
+            error_string = f"Machine code translation error: {str(e)}"
+            print(error_string, file=sys.stderr)
+            return 1
+    print("Programs successfully assembled for target architecture.\n")
+
+    # Write out the binary encodings to disk.
+    for binary_encoding in binary_encodings:
+        register_words, instruction_words = binary_encoding
+        for register_word in register_words:
+            packed_register_word = struct.pack("<I", register_word)
+            output_file.write(packed_register_word)
+        for instruction_word in instruction_words:
+            packed_instruction_word = struct.pack("<I", instruction_word)
+            output_file.write(packed_instruction_word)
+    output_file.close()
+    print(f"The binary has been written to {output_file_path}.\n")
+
+    # Print the results.
+    print("The assembled program reads:\n")
+    for binary_encoding in binary_encodings:
+        register_words, instruction_words = binary_encoding
+        print("Initial register state:")
+        for register_word in register_words:
+            print("{0:#0{1}x}".format(register_word, int(cp.device_word_width / 4) + 2))
+        print("\nInstruction memory:")
+        instruction_length = int(len(instruction_words) / cp.num_instructions)
+        for i, instruction_word in enumerate(instruction_words):
+            print("{0:#0{1}x}".format(instruction_word, 10))
+            if (i % instruction_length == instruction_length - 1) and (i != len(instruction_words) - 1):
+                print("----------")
+        print("")
+
+    # Write out the hex file if requested.
+    if has_hex_output_file:
+        for binary_encoding in binary_encodings:
+            register_words, instruction_words = binary_encoding
+            for register_word in register_words:
+                register_word_string = "{0:#0{1}x}".format(register_word, 10)
+                print(register_word_string[2::], file=hex_output_file)
+            for instruction_word in instruction_words:
+                instruction_word_string = "{0:#0{1}x}".format(instruction_word, 10)
+                print(instruction_word_string[2::], file=hex_output_file)
+        hex_output_file.close()
+
+    # Exit successfully.
+    return 0
+
+
+if __name__ == "__main__":
+    parsed_arguments = docopt(__doc__)
+    sys.exit(main(parsed_arguments))

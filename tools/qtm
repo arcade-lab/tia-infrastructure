@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+
+"""
+Run quartet test system binaries on the remote board and check results. It assumes the
+$TIA_TESTS_DIR environment variable has been set, and that the TESTS_FILE manifest references tests
+defined with $TIA_TESTS_DIR/quartet_tests. It can optionally dump performance counter information
+to a CSV.
+
+Usage: qtm [-h] [-o FILE] BITSTREAM_FILE FREQUENCY_MHZ PLATFORM_FILE TESTS_FILE
+
+Arguments:
+    BITSTREAM_FILE      FPGA bitstream
+    FREQUENCY_MHZ       requested clock frequency in MHz
+    PLATFORM_FILE       JSON file containing physical parameters
+    TESTS_FILE          JSON file containing the tests to be run
+
+Options:
+    -h --help           this description
+    -o FILE             file in which to save the results as a CSV
+"""
+
+import json
+import os
+import shutil
+import sys
+
+from docopt import docopt
+import pandas as pd
+from scp import SCPClient
+from tqdm import tqdm
+
+from test_manager.zynq_test_system import prepare_workspace, \
+                                          connect_to_zynq_board, \
+                                          set_fclk0, \
+                                          configure_fpga, \
+                                          build_executable, \
+                                          transfer_executable_and_platform, \
+                                          get_test_manifest, \
+                                          setup_test, \
+                                          transfer_test, \
+                                          run_test, \
+                                          cleanup_test, \
+                                          cleanup_workspace, \
+                                          cleanup_executable
+
+
+def main(arguments):
+    """
+    Entry point.
+
+    :param arguments: arguments parsed by docopt
+    :return: exit code
+    """
+
+    # --- Argument Parsing ---
+
+    # Check usage, and parse the arguments.
+    bitstream_file_abspath = os.path.abspath(arguments["BITSTREAM_FILE"])
+    platform_json_file_path = arguments["PLATFORM_FILE"]
+    try:
+        with open(platform_json_file_path) as platform_json_file:
+            platform_json_string = platform_json_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the platform file {platform_json_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    tests_json_file_path = arguments["TESTS_FILE"]
+    try:
+        with open(tests_json_file_path) as tests_json_file:
+            tests_json_string = tests_json_file.read()
+    except:
+        e = sys.exc_info()[1]
+        error_string = f"Unable to open the tests file {tests_json_file_path}: {str(e)}"
+        print(error_string, file=sys.stderr)
+        return 1
+    if arguments["-o"]:
+        output_csv_file_abspath = os.path.abspath(arguments["-o"])
+
+    # --- Worskspace Preparation ---
+
+    # Local workspace directory.
+    platform_json_file_abspath = os.path.abspath(platform_json_file_path)
+    tests_directory = os.environ["TIA_TESTS_DIR"]
+    os.chdir(f"{tests_directory}/quartet_tests")
+    prepare_workspace()
+    shutil.copy(platform_json_file_abspath, "workspace/platform.json")
+
+    # --- Parameter Parsing ---
+
+    # Load JSON.
+    platform_dictionary = json.loads(platform_json_string)
+    tests_list = json.loads(tests_json_string)
+
+    # --- Establish Connection ---
+
+    # Get both SSH and SFTP.
+    ssh = connect_to_zynq_board()
+    scp = SCPClient(ssh.get_transport())
+
+    # --- FPGA Configuration ---
+
+    # Set the clock.
+    try:
+        frequency_mhz = int(arguments["FREQUENCY_MHZ"])
+    except ValueError:
+        print("The frequency must be an integer.", file=sys.stderr)
+        return 1
+    set_fclk0(frequency_mhz, ssh)
+
+    # Runs a remote command, so make sure the hardware is not in use.
+    configure_fpga(bitstream_file_abspath, ssh, scp)
+
+    # --- Test Execution ---
+
+    # Inialize an empty dictionary of results.
+    results_dictionary = {}
+
+    # Perform tests.
+    build_executable("qte")
+    transfer_executable_and_platform("qte", ssh, scp)
+    for test_name in tqdm(tests_list, desc="Tests"):
+        test_manifest = get_test_manifest(test_name)
+        setup_test(test_manifest, "quartet", platform_json_file_abspath)
+        transfer_test(test_manifest, scp)
+        test_results_dictionary = run_test("qte", platform_dictionary, test_manifest, ssh)
+        if not test_results_dictionary["passed"]:
+            error_message = test_results_dictionary["stderr"]
+            error_string = f"The test {test_name} failed with the following error messages:\n{error_message}"
+            print(error_string, end='', file=sys.stderr)
+            cleanup_test(ssh)
+            cleanup_workspace()
+            cleanup_executable("qte")
+            return 1
+        if platform_dictionary["core"]["has_performance_counters"]:
+            del test_results_dictionary["passed"]
+        results_dictionary.update({test_name: test_results_dictionary["pe_3"]})  # PE 3 is the "worker" PE in all tests.
+        cleanup_test(ssh)
+    cleanup_workspace()
+    cleanup_executable("qte")
+
+    # Close our connection to the board.
+    scp.close()
+    ssh.close()
+
+    # Clear the progress bar, and display the tabulated results.
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K")
+    results = pd.DataFrame(results_dictionary)
+    print("Results:\n\n", results)
+
+    # Save the CSV if the option was flagged.
+    if arguments["-o"]:
+        results.to_csv(output_csv_file_abspath)
+
+    # Exit successfully.
+    return 0
+
+
+if __name__  == "__main__":
+    parsed_arguments = docopt(__doc__)
+    sys.exit(main(parsed_arguments))
