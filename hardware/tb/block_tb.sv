@@ -93,9 +93,9 @@ module block_tb
     // --- Program ---
 
     // Prepare the program from the hex file.
-    mm_instruction_t instructions [16 * TIA_MAX_NUM_INSTRUCTIONS - 1:0];
+    logic [TIA_MMIO_DATA_WIDTH - 1:0] program_words [16 * (TIA_NUM_REGISTER_FILE_WORDS + TIA_NUM_INSTRUCTION_MEMORY_WORDS) - 1:0];
     initial
-        $readmemh("instructions.hex", instructions);
+        $readmemh("program.hex", program_words);
 
     // Router settings.
     `ifndef TIA_SOFTWARE_ROUTER
@@ -288,11 +288,13 @@ module block_tb
     endtask
 
     // Write complete program (including invalid/nop instruction padding) into the instruction memory.
-    task write_program(input mm_instruction_t instructions [16 * TIA_MAX_NUM_INSTRUCTIONS - 1:0]);
-        integer i, j;
+    task write_program(input logic [TIA_MMIO_DATA_WIDTH - 1:0] program_words [16 * (TIA_NUM_REGISTER_FILE_WORDS + TIA_NUM_INSTRUCTION_MEMORY_WORDS) - 1:0]);
+        integer i, m, j;
         for (i = 0; i < 16; i++) begin
-            for (j = 0; j < TIA_MAX_NUM_INSTRUCTIONS; j++) begin
-                write_instruction(i, j, instructions[TIA_MAX_NUM_INSTRUCTIONS * i + j]);
+            m = memory_map_index(i);
+            for (j = 0; j < TIA_NUM_REGISTER_FILE_WORDS + TIA_NUM_INSTRUCTION_MEMORY_WORDS; j++) begin
+                write(TIA_NUM_PROCESSING_ELEMENT_ADDRESS_SPACE_WORDS * m + TIA_CORE_REGISTER_FILE_BASE_INDEX + j,
+                  program_words[i * (TIA_NUM_REGISTER_FILE_WORDS + TIA_NUM_INSTRUCTION_MEMORY_WORDS) + j]);
             end
         end
     endtask
@@ -325,7 +327,7 @@ module block_tb
         // Initialize and program the block.
         reset_block();
         enable_block();
-        write_program(instructions);
+        write_program(program_words);
         `ifndef TIA_SOFTWARE_ROUTER
             program_routers(router_settings);
         `endif
