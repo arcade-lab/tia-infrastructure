@@ -133,7 +133,7 @@ The experimental Linux driver `tia_ctrl_uio` can be loaded from a kernel module,
 
 Now that the toolchain has been set up, we can start exploring the RTL and testbench infrastructure in the `hardware` subdirectory.
 From within the `hardware` directory, the `parameters.yaml` file can be used to set the architectural parameters of the target system.
-Once the `parameters.yaml` file has been modified make reparametrize will reparametrize the RTL and produce a `platform.json` file that describes the hardware target and serves as an input to the assembler, functional simulator and userspace executables.
+Once the `parameters.yaml` file has been modified `make reparametrize` will reparametrize the RTL and produce a `platform.json` file that describes the hardware target and serves as an input to the assembler, functional simulator and userspace executables.
 
 Using this `platform.json` file, we can now run tests from the functional simulator.
 For example, navigating to the `tests` subdirectory we could run the merge sort quartet workload on the `qtfs` functional simulator as follows:
@@ -142,12 +142,12 @@ For example, navigating to the `tests` subdirectory we could run the merge sort 
 qtfs ../hardware/platform.json quartet_tests/merge/merge.tia null quartet_tests/merge/input_data.csv quartet_tests/merge/expected_output_data.csv
 ```
 
-The third "channels" argument is `null`, because in this release we have not included support for our programmable circuit-switched interconnect routers in this release, and therfore the connectivity between processing elements is fixed instead of dynamically defined by channels.
+The third "channels" argument is `null`, because in this release we have not included support for our programmable circuit-switched interconnect routers, and therfore the connectivity between processing elements is fixed instead of dynamically defined by channels.
 Input and output channels 0, 1, 2, and 3 correspond to the cardinal directions N, E, S, and W, respectively.
-This model, which we refer to as "software" routing, is performed by dedicated instructions within each PE's program.
+In this model, which we refer to as "software" routing, routing is performed by dedicated instructions within each PE's program.
 
 Back in the `hardware` directory, to run test binaries on the RTL testbench infrastructure, use one of the targets of the form `make [benchmark]_vcd`.
-For example, make `bst_vcd` will assemble the bst.tia assembly file from the tests directory and prepare the input data for the single processing element testbench to run.
+For example, `make bst_vcd` will assemble the `bst.tia` assembly file from the tests directory and prepare the input data for the single processing element testbench to run.
 The output will be a cycle-accurate VCD trace of the entire system running the assembled binary.
 
 To begin FPGA prototyping, we can generate bitstreams with the following set of make commands:
@@ -164,9 +164,9 @@ These targets use aggressive implementation optimization on the FPGA and close i
 
 With a bitstream ready, we can now set up our FPGA infrastructure.
 Our test utilities assume that the Zynq FPGA is on its own NIC on the test workstation at 192.168.0.2.
-Once the Zynq system is booted using the SD card image we build previously, it should be possible to SSH and use the modest userspace Yocto provides to us to verify everything is working.
+Once the Zynq system is booted using the SD card image we built previously, it should be possible to SSH using the `root` password `root` (hence the need for the private subnet) and use the modest userspace Yocto provides to us to verify everything is working.
 
-From the test system, we can now invoke our test managers to run tests and (optionally extract performance counter data).
+From the test workstation, we can now invoke our test managers to run tests and (optionally extract performance counter data).
 The test mangers (`petm`, `qtm`, and `btm`) all take the bitstream file, clock frquency, platform file and a tests JSON manifest file as arguments.
 For example to run the tests from the MICRO paper on a quartet from the main infrastructure directrory.
 
