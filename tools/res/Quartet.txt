@@ -1,5 +1,0 @@
-We refer to the second level of the hierarchy of our spatial array as a "quartet". The four autonomous PEs are connected to one another as well as a small 2R1W data memory in this test system.
-
-Each PE has the same performance counter and debug interface as in the PE test system and their behavior can still be monitored individually within the context of a cooperative workload.
-
-In a version with a cache, we envision that each quartet would have its own very small L1 cache.

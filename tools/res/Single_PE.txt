@@ -1,5 +1,0 @@
-The single PE test system is a minimal wrapper around a PE, the bottom of our spatial array hierarchy. The PE under test has a complete instruction set and scratchpad, and it has been wired up to a small 2R1W data memory.
-
-It is useful for verifying modifications to the PE microarchitecture as well as developing programs with simple control flow.
-
-Provides a set of fine-grain performance counters for monitoring PE performance and a debug interface for determining architectural state should a program fail to halt.

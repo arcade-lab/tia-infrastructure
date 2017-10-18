@@ -1,3 +1,0 @@
-The block is comprised of four quartets. We envision that this would be the granularity at which larger spatial arrays would be stamped out.
-
-In a version with a caches, we invision that in addition to each quartet's L1 cache, each block would have a backing L2 cache, with an L3 cache underneath however many blocks comprise the complete array.
