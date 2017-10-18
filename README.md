@@ -41,7 +41,7 @@ This preliminary release is structured around test systems for small scale spati
   - functional simulator: `qtfs`
   - bitstreams: `qts_*_.bit`
   - FPGA test manager: `qtm`
-* Block test system (`bts')
+* Block test system (`bts`)
   - functional simulator: `btfs`
   - bitstreams: `bts_*_.bit`
   - FPGA test manager: `btm`
